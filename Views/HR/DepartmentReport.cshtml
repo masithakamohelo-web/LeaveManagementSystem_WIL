@@ -1,0 +1,126 @@
+﻿
+@{
+}
+@model List<Leave2Day.Models.LeaveApplication>
+@{
+    ViewData["Title"] = "Department Leave Report";
+    var department = ViewBag.Department as string;
+}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1><i class="bi bi-building"></i> @department Department - Leave Report</h1>
+        <p class="text-muted">Complete leave statistics for @department department</p>
+    </div>
+</div>
+
+<!-- Department Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Total Requests</h6>
+                <h2 class="text-primary">@ViewBag.TotalRequests</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Approved</h6>
+                <h2 class="text-success">@ViewBag.ApprovedCount</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Rejected</h6>
+                <h2 class="text-danger">@ViewBag.RejectedCount</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Total Days</h6>
+                <h2 class="text-info">@ViewBag.TotalDays</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed List -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">All Leave Requests</h5>
+            </div>
+            <div class="card-body">
+                @if (Model != null && Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Leave Type</th>
+                                    <th>Duration</th>
+                                    <th>Days</th>
+                                    <th>Status</th>
+                                    <th>Applied On</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var request in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@request.User?.FullName</div>
+                                            <small class="text-muted">@request.User?.email</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">@request.type</span>
+                                        </td>
+                                        <td>@request.startDate.ToString("dd MMM") - @request.endDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-primary">@request.numberOfDays day(s)</span>
+                                        </td>
+                                        <td>
+                                            @{
+                                                var statusClass = request.status switch
+                                                {
+                                                    Leave2Day.Models.LeaveStatus.pending => "warning",
+                                                    Leave2Day.Models.LeaveStatus.approvedBySupervisor => "info",
+                                                    Leave2Day.Models.LeaveStatus.approvedByHod => "primary",
+                                                    Leave2Day.Models.LeaveStatus.recorded => "success",
+                                                    Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "danger",
+                                                    _ => "secondary"
+                                                };
+                                            }
+                                            <span class="badge bg-@statusClass">@request.status</span>
+                                        </td>
+                                        <td>@request.appliedDate.ToString("dd MMM yyyy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-center text-muted">No leave requests found for this department.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-12">
+        <a asp-action="Reports" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+    </div>
+</div>

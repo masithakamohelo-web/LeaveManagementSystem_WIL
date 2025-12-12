@@ -1,0 +1,65 @@
+﻿@model List<Leave2Day.Models.LeaveApplication>
+
+@{
+    ViewData["Title"] = "Leave History";
+    var pastLeaves = Model.Where(l => l.endDate.Date < DateTime.Today).ToList();
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3">Leave History</h2>
+
+    @if (pastLeaves.Count == 0)
+    {
+        <div class="alert alert-info">No past leave requests found.</div>
+    }
+    else
+    {
+        <table class="table table-striped table-bordered">
+            <thead style="background-color: cornflowerblue; color: black;">
+                <tr>
+                    <th scope="col">Leave Type</th>
+                    <th scope="col">Start Date</th>
+                    <th scope="col">End Date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Applied On</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var leave in pastLeaves)
+                {
+                    <tr>
+                        <td>@leave.type</td>
+                        <td>@leave.startDate.ToShortDateString()</td>
+                        <td>@leave.endDate.ToShortDateString()</td>
+                        <td>
+                            <span class="badge bg-@GetStatusBadgeClass(leave.status)">
+                                @leave.status.ToString()
+                            </span>
+                        </td>
+                        <td>@leave.appliedDate.ToShortDateString()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <div class="d-flex justify-content-end mt-3">
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-secondary"> ← Back</a>
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadgeClass(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.pending => "warning",
+            Leave2Day.Models.LeaveStatus.cancelled => "warning",
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "info",
+            Leave2Day.Models.LeaveStatus.approvedByHod => "primary",
+            Leave2Day.Models.LeaveStatus.recorded => "success",
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "danger",
+            _ => "secondary"
+        };
+    }
+}

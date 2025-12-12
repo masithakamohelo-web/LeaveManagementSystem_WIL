@@ -1,0 +1,178 @@
+﻿@model Leave2Day.Models.LeaveRequestViewModel
+@{
+    ViewData["Title"] = "Apply for Leave";
+    var user = ViewBag.User as Leave2Day.Models.User;
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">@ViewData["Title"]</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Apply" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LeaveType" class="form-label">Leave Type</label>
+                            <select asp-for="LeaveType" class="form-select" asp-items="@Html.GetEnumSelectList<Leave2Day.Models.LeaveType>()">
+                                <option value="">Select leave type</option>
+                            </select>
+                            <span asp-validation-for="LeaveType" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StartDate" class="form-label">Start Date</label>
+                            <input asp-for="StartDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="StartDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EndDate" class="form-label">End Date</label>
+                            <input asp-for="EndDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="EndDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ProofDocumentLink" class="form-label" style="display: none;">Proof Document (Google Drive Link)</label>
+                        <input type="url" id="ProofDocumentLink" name="ProofDocumentLink" class="form-control"
+                               placeholder="Paste your Google Drive document link here" />
+                        <small class="text-muted">Example: https://drive.google.com/file/d/abc123/view</small>
+                    </div>
+
+
+                    <div class="form-group" id="uploadSection" style="display:none;">
+                        <label>Upload Supporting Document (PDF/DOCX only)</label>
+                        <input type="file" name="DocumentFile" class="form-control" accept=".pdf,.docx" />
+                    </div>
+
+                    <div class="card bg-light border mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">Leave Details</h6>
+                            <div id="leaveDetails">
+                                <div>Number of working days: <span id="calculatedDays" class="fw-bold">0</span></div>
+                                <div>Leave type: <span id="selectedType" class="fw-bold">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Reason" class="form-label">Reason</label>
+                        <textarea asp-for="Reason" class="form-control" rows="4" placeholder="Please provide reason for leave"></textarea>
+                        <span asp-validation-for="Reason" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Submit Application</button>
+                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        @if (user != null)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Leave Balance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Annual Leave:</span>
+                            <span class="fw-bold text-primary">@user.RemainingAnnualLeave days</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-primary" style="width: @(((double)user.RemainingAnnualLeave / user.LeaveBalance.Annual) * 100)%"></div>
+                        </div>
+                        <small class="text-muted">@user.LeaveBalance.UsedAnnual of @user.LeaveBalance.Annual used</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Sick Leave:</span>
+                            <span class="fw-bold text-success">@user.RemainingSickLeave days</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: @(((double)user.RemainingSickLeave / user.LeaveBalance.Sick) * 100)%"></div>
+                        </div>
+                        <small class="text-muted">@user.LeaveBalance.UsedSick of @user.LeaveBalance.Sick used</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">• Annual leave must be applied at least 2 weeks in advance</li>
+                        <li class="mb-2">• Sick leave requires medical certificate for more than 2 days</li>
+                        <li class="mb-2">• Emergency leave will be processed immediately</li>
+                        <li>• All leave is subject to supervisor approval</li>
+                    </ul>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        const startDateInput = document.getElementById('StartDate');
+        const endDateInput = document.getElementById('EndDate');
+        const leaveTypeSelect = document.getElementById('LeaveType');
+
+        const calculatedDaysSpan = document.getElementById('calculatedDays');
+        const selectedTypeSpan = document.getElementById('selectedType');
+
+        function calculateWorkingDays(start, end) {
+            if (!start || !end) return 0;
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            let count = 0;
+
+            while (startDate <= endDate) {
+                const day = startDate.getDay();
+                if (day !== 0 && day !== 6) count++; // exclude weekends
+                startDate.setDate(startDate.getDate() + 1);
+            }
+
+            return count;
+        }
+
+        function updateDetails() {
+            const startVal = startDateInput.value;
+            const endVal = endDateInput.value;
+            const leaveType = leaveTypeSelect.value;
+
+            const days = calculateWorkingDays(startVal, endVal);
+            calculatedDaysSpan.textContent = days;
+            selectedTypeSpan.textContent = leaveType || "-";
+        }
+
+        startDateInput.addEventListener('change', function () {
+            endDateInput.min = this.value;
+            updateDetails();
+        });
+
+        endDateInput.addEventListener('change', updateDetails);
+        leaveTypeSelect.addEventListener('change', updateDetails);
+
+                document.getElementById("leaveType").addEventListener("change", function () {
+            const upload = document.getElementById("uploadSection");
+            const type = this.value;
+            const needsDoc = ["Sick", "Maternity", "Paternity", "Emergency"];
+            upload.style.display = needsDoc.includes(type) ? "block" : "none";
+        });
+    </script>
+}

@@ -1,0 +1,450 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    var user = ViewBag.User as Leave2Day.Models.User;
+    var userRole = ViewBag.UserRole as string;
+    var recentRequests = ViewBag.RecentLeaveRequests as List<Leave2Day.Models.LeaveApplication> ?? new List<Leave2Day.Models.LeaveApplication>();
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>Welcome, @User.Identity.Name</h1>
+        <p class="text-muted">@userRole - @user?.department Department</p>
+    </div>
+</div>
+
+@* Show cancel success/error messages *@
+@if (TempData["LeaveCancelSuccess"] != null)
+{
+    <div class="alert alert-success mt-2">@TempData["LeaveCancelSuccess"]</div>
+}
+@if (TempData["LeaveCancelError"] != null)
+{
+    <div class="alert alert-danger mt-2">@TempData["LeaveCancelError"]</div>
+}
+
+<div class="row">
+
+    <!-- Leave Balance Cards - MANUAL CALCULATION -->
+    @if (user != null)
+    {
+
+        // Manual calculations
+        var remainingAnnual = user.LeaveBalance.Annual - user.LeaveBalance.UsedAnnual;
+        var remainingSick = user.LeaveBalance.Sick - user.LeaveBalance.UsedSick;
+        var remainingMaternity = user.LeaveBalance.Maternity - user.LeaveBalance.UsedMaternity;
+        var remainingPaternity = user.LeaveBalance.Paternity - user.LeaveBalance.UsedPaternity;
+        var remainingEmergency = user.LeaveBalance.Emergency - user.LeaveBalance.UsedEmergency;
+
+        <!-- Leave Balance Cards -->
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h7 class="card-title">Annual Leave</h7>
+                    <h5 id="annualLeaveBalance">@remainingAnnual/21</h5>
+                    <small>Remaining days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h7 class="card-title">Sick Leave</h7>
+                    <h5 id="sickLeaveBalance">@remainingSick/15</h5>
+                    <small>Remaining days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h7 class="card-title">Maternity Leave</h7>
+                    <h5 id="maternityLeaveBalance">@remainingMaternity/90</h5>
+                    <small>Remaining days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h7 class="card-title">Paternity Leave</h7>
+                    <h5 id="paternityLeaveBalance">@remainingPaternity/14</h5>
+                    <small>Remaining days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <h7 class="card-title">Emergency Leave</h7>
+                    <h5 id="emergencyLeaveBalance">@remainingEmergency/5</h5>
+                    <small>Remaining days</small>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Refresh Indicator -->
+<div id="refreshIndicator" class="alert alert-info mt-3" style="display: none;">
+    <i class="fas fa-sync-alt fa-spin"></i> Updating balances...
+</div>
+
+<!-- Recent Leave Requests -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Leave Requests</h5>
+                <div>
+                    <button id="refreshBalances" class="btn btn-outline-secondary btn-sm me-2">
+                        <i class="fas fa-sync-alt"></i> Refresh Balances
+                    </button>
+                    <a asp-controller="Leave" asp-action="Apply" class="btn btn-primary btn-sm">Apply for Leave</a>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (recentRequests.Any())
+                {
+                    <div class="list-group">
+                        @* Render each request as a list-group item container (not an anchor) so we can include a Cancel form safely *@
+                        @foreach (var item in recentRequests)
+                        {
+                            var canCancel = user != null
+                            && item.employeeId == user.id
+                            && item.status == Leave2Day.Models.LeaveStatus.pending
+                            && user.role == Leave2Day.Models.UserRole.Employee;
+
+                            <div class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <div>
+                                            <h5 class="mb-1">
+                                                @item.type -- @item.startDate.ToString("yyyy-MM-dd") to @item.endDate.ToString("yyyy-MM-dd")
+                                            </h5>
+                                            <p class="mb-1">@item.reason</p>
+                                            @*   <small class="text-muted">
+                                                @item.numberOfDays day@(item.numberOfDays != 1 ? "s" : "")
+                                            </small>*@
+                                        </div>
+
+                                        <div class="text-end">
+                                            <div class="d-flex align-items-center justify-content-end gap-3">
+
+
+
+                                                @* Status badge next to the buttons *@
+                                                <span class="@GetStatusBadgeClass(item.status)">
+                                                    @item.status
+                                                </span>
+                                                @* Buttons column: Details on top, Cancel under it *@
+                                                <div class="d-flex flex-column align-items-end">
+                                                    <a asp-controller="Leave"
+                                                       asp-action="Details"
+                                                       asp-route-id="@item.id"
+                                                       class="btn btn-sm btn-outline-secondary mb-1">
+                                                        Details
+                                                    </a>
+
+
+                                                    @if (canCancel)
+                                                    {
+                                                        <form asp-controller="Leave"
+                                                              asp-action="Cancel"
+                                                              method="post"
+                                                              onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.id" />
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                Cancel
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                </div>
+
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                }
+                else
+                {
+                    <p class="text-muted">No leave requests found.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Approvals (for Supervisors, HODs, HR) -->
+@if (ViewBag.PendingApprovals != null)
+{
+    var pendingApprovals = ViewBag.PendingApprovals as List<Leave2Day.Models.LeaveApplication>;
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Pending Approvals (@userRole Level)</h5>
+                </div>
+                <div class="card-body">
+                    @if (pendingApprovals.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Leave Type</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var request in pendingApprovals.Take(5))
+                                    {
+                                        <tr>
+                                            <td>@request.User?.FullName</td>
+                                            <td>@request.type</td>
+                                            <td>@request.startDate.ToString("dd MMM yyyy")</td>
+                                            <td>@request.endDate.ToString("dd MMM yyyy")</td>
+                                            <td>@request.numberOfDays</td>
+
+
+                                            <td>
+                                                <a asp-controller="Approval" asp-action="Review" asp-route-id="@request.id"
+                                                   class="btn btn-sm btn-primary">Review</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (pendingApprovals.Count > 5)
+                        {
+                            <div class="text-center">
+                                <a asp-controller="Approval" asp-action="Index" class="btn btn-outline-primary">View All Approvals</a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted">No pending approvals.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- HR Approved Leaves for Capture -->
+@if (ViewBag.ApprovedForCapture != null)
+{
+    var approvedForCapture = ViewBag.ApprovedForCapture as List<Leave2Day.Models.LeaveApplication>;
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm border-success">
+                <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 text-success">
+                        <i class="bi bi-clipboard-check"></i> Approved Leaves - Ready for Capture
+                    </h5>
+                    <span class="badge bg-success">@approvedForCapture.Count to capture</span>
+                </div>
+                <div class="card-body">
+                    @if (approvedForCapture.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Leave Type</th>
+                                        <th>Duration</th>
+                                        <th>Days</th>
+                                        <th>Approved By HOD</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var request in approvedForCapture.Take(5))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">@request.User?.FullName</div>
+                                                <small class="text-muted">@request.User?.email</small>
+                                            </td>
+                                            <td>@request.User?.department</td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">@request.type</span>
+                                            </td>
+                                            <td>@request.startDate.ToString("dd MMM") - @request.endDate.ToString("dd MMM yyyy")</td>
+                                            <td>
+                                                <span class="badge bg-primary">@request.numberOfDays day@(request.numberOfDays != 1 ? "s" : "")</span>
+                                            </td>
+                                            <td>@request.hodActionDate?.ToString("dd MMM yyyy")</td>
+                                            <td>
+                                                <a asp-controller="HR" asp-action="Index" class="btn btn-sm btn-success">
+                                                    <i class="bi bi-arrow-right"></i> Go to Capture
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (approvedForCapture.Count > 5)
+                        {
+                            <div class="text-center mt-3">
+                                <a asp-controller="HR" asp-action="Index" class="btn btn-success">
+                                    View All @approvedForCapture.Count Approved Leaves <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No approved leaves pending capture. All caught up!</p>
+                            <a asp-controller="HR" asp-action="Reports" class="btn btn-primary">
+                                <i class="bi bi-bar-chart"></i> View Reports
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HR Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-speedometer2"></i> Quick Stats
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-success mb-2">
+                                    <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                                </div>
+                                <h4 class="mb-0">@approvedForCapture.Count</h4>
+                                <small class="text-muted">Pending Capture</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-primary mb-2">
+                                    <i class="bi bi-bar-chart" style="font-size: 2rem;"></i>
+                                </div>
+                                <h4 class="mb-0">
+                                    <a asp-controller="HR" asp-action="Reports" class="text-decoration-none">
+                                        View Reports
+                                    </a>
+                                </h4>
+                                <small class="text-muted">Analytics & Statistics</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-info mb-2">
+                                    <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                </div>
+                                <h4 class="mb-0">
+                                    <a asp-controller="HR" asp-action="Employees" class="text-decoration-none">
+                                        View Employees
+                                    </a>
+                                </h4>
+                                <small class="text-muted">Employee Management</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+               function updateBalances() {
+            $('#refreshIndicator').fadeIn();
+
+            $.ajax({
+                url: '@Url.Action("GetUserBalances", "Dashboard")',
+                type: 'GET',
+                success: function (data) {
+                    if (data.success) {
+                        // These should now return the REMAINING days, not totals
+                        $('#annualLeaveBalance').text(data.balances.annual + '/21');
+                        $('#sickLeaveBalance').text(data.balances.sick + '/15');
+                        $('#maternityLeaveBalance').text(data.balances.maternity + '/90');
+                        $('#paternityLeaveBalance').text(data.balances.paternity + '/14');
+                        $('#emergencyLeaveBalance').text(data.balances.emergency + '/5');
+
+                        showTemporaryMessage('Balances updated successfully!', 'success');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error updating balances:', error);
+                    showTemporaryMessage('Error updating balances', 'error');
+                },
+                complete: function () {
+                    $('#refreshIndicator').fadeOut();
+                }
+            });
+        }
+
+
+        function showTemporaryMessage(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const $alert = $(`<div class="alert ${alertClass} alert-dismissible fade show mt-2" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`);
+
+            $('.row:first').after($alert);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                $alert.alert('close');
+            }, 3000);
+        }
+
+        // Event handlers
+        $(document).ready(function () {
+            // Manual refresh button
+            $('#refreshBalances').on('click', function () {
+                updateBalances();
+            });
+        });
+    </script>
+}
+
+@functions {
+    string GetStatusBadgeClass(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.pending => "badge bg-warning text-dark",
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "badge bg-info text-dark",
+            Leave2Day.Models.LeaveStatus.approvedByHod => "badge bg-primary text-white",
+            Leave2Day.Models.LeaveStatus.recorded => "badge bg-success text-white",
+            Leave2Day.Models.LeaveStatus.cancelled => "badge bg-danger text-white",
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "badge bg-danger text-white",
+            _ => "badge bg-secondary text-white"
+        };
+    }
+}

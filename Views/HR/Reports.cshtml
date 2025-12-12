@@ -1,0 +1,184 @@
+﻿
+@{
+}
+@{
+    ViewData["Title"] = "Leave Reports";
+    var departmentStats = ViewBag.DepartmentStats as dynamic;
+    var leaveTypeStats = ViewBag.LeaveTypeStats as dynamic;
+    var monthlyStats = ViewBag.MonthlyStats as dynamic;
+}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1><i class="bi bi-bar-chart"></i> Leave Reports & Analytics</h1>
+        <p class="text-muted">Comprehensive leave statistics and department analysis</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Total Requests</h6>
+                <h2 class="text-primary">@ViewBag.TotalRequests</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Approved</h6>
+                <h2 class="text-success">@ViewBag.TotalApproved</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Rejected</h6>
+                <h2 class="text-danger">@ViewBag.TotalRejected</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Pending</h6>
+                <h2 class="text-warning">@ViewBag.TotalPending</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Statistics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-building"></i> Department Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Department</th>
+                                <th>Total Requests</th>
+                                <th>Pending</th>
+                                <th>Approved</th>
+                                <th>Rejected</th>
+                                <th>Total Days</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (departmentStats != null)
+                            {
+                                @foreach (var dept in departmentStats)
+                                {
+                                    <tr>
+                                        <td><strong>@dept.Department</strong></td>
+                                        <td>@dept.TotalRequests</td>
+                                        <td><span class="badge bg-warning">@dept.Pending</span></td>
+                                        <td><span class="badge bg-success">@dept.Approved</span></td>
+                                        <td><span class="badge bg-danger">@dept.Rejected</span></td>
+                                        <td><span class="badge bg-primary">@dept.TotalDays days</span></td>
+                                        <td>
+                                            <a asp-action="DepartmentReport" asp-route-department="@dept.Department"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-file-earmark-text"></i> View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Leave Type Statistics -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Leave Type Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Leave Type</th>
+                                <th>Count</th>
+                                <th>Total Days</th>
+                                <th>Approved</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (leaveTypeStats != null)
+                            {
+                                @foreach (var type in leaveTypeStats)
+                                {
+                                    <tr>
+                                        <td><strong>@type.LeaveType</strong></td>
+                                        <td>@type.Count</td>
+                                        <td><span class="badge bg-primary">@type.TotalDays days</span></td>
+                                        <td><span class="badge bg-success">@type.Approved</span></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trend -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Monthly Trend</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Month</th>
+                                <th>Requests</th>
+                                <th>Total Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (monthlyStats != null)
+                            {
+                                @foreach (var month in monthlyStats)
+                                {
+                                    <tr>
+                                        <td><strong>@month.Month</strong></td>
+                                        <td>@month.Count</td>
+                                        <td><span class="badge bg-primary">@month.TotalDays days</span></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+

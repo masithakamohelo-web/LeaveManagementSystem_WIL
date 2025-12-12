@@ -1,0 +1,102 @@
+﻿
+@{
+}
+@model List< Leave2Day.Models.LeaveApplication>
+@{
+    ViewData["Title"] = "Employee Leave History";
+    var employee = ViewBag.Employee as Leave2Day.Models.User;
+}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1><i class="bi bi-clock-history"></i> Employee Leave History</h1>
+        @if (employee != null)
+        {
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4>@employee.FullName</h4>
+                    <p class="text-muted mb-0">@employee.email | @employee.department Department</p>
+                </div>
+                <div class="text-end">
+                    <div class="mb-2">
+                        <span class="badge bg-primary">Annual: @employee.RemainingAnnualLeave/@employee.LeaveBalance.Annual</span>
+                        <span class="badge bg-success">Sick: @employee.RemainingSickLeave/@employee.LeaveBalance.Sick</span>
+                        <span class="badge bg-success">Maternity: @employee.RemainingMaternityLeave/@employee.LeaveBalance.Maternity</span>
+                        <span class="badge bg-success">Paternity: @employee.RemainingPaternityLeave/@employee.LeaveBalance.Paternity</span>
+                        <span class="badge bg-success">Emergency: @employee.RemainingEmergencyLeave/@employee.LeaveBalance.Emergency</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                @if (Model != null && Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>Duration</th>
+                                    <th>Days</th>
+                                    <th>Status</th>
+                                    <th>Applied On</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var request in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-light text-dark">@request.type</span>
+                                        </td>
+                                        <td>@request.startDate.ToString("dd MMM yyyy") - @request.endDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-primary">@request.numberOfDays day(s)</span>
+                                        </td>
+                                        <td>
+                                            @{
+                                                var statusClass = request.status switch
+                                                {
+                                                    Leave2Day.Models.LeaveStatus.pending => "warning",
+                                                    Leave2Day.Models.LeaveStatus.approvedBySupervisor => "info",
+                                                    Leave2Day.Models.LeaveStatus.approvedByHod => "primary",
+                                                    Leave2Day.Models.LeaveStatus.recorded => "success",
+                                                    Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "danger",
+                                                    _ => "secondary"
+                                                };
+                                            }
+                                            <span class="badge bg-@statusClass">@request.status</span>
+                                        </td>
+                                        <td>@request.appliedDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <small>@(request.reason.Length > 50 ? request.reason.Substring(0, 50) + "..." : request.reason)</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-center text-muted">No leave history found for this employee.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-12">
+        <a asp-action="Employees" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Employees
+        </a>
+    </div>
+</div>

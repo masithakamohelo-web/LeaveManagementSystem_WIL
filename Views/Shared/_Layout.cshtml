@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Leave Management System</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        /* Sidebar Styles */
+        .sidebar {
+            height: 100vh;
+            width: 280px;
+            position: fixed;
+            top: 0;
+            left: -280px;
+            background-color: #343a40;
+            transition: left 0.3s ease;
+            z-index: 1050;
+            padding-top: 60px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1040;
+            display: none;
+        }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+        .sidebar .nav-link {
+            color: #fff;
+            padding: 12px 20px;
+            border-bottom: 1px solid #4b545c;
+            transition: all 0.3s;
+        }
+
+            .sidebar .nav-link:hover {
+                background-color: #495057;
+                color: #fff;
+            }
+
+            .sidebar .nav-link.active {
+                background-color: #007bff;
+            }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #4b545c;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+            .sidebar-header .navbar-brand {
+                color: #fff;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            padding: 0.25rem 0.5rem;
+            margin-right: 1rem;
+        }
+
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+
+        .sidebar.active + .main-content {
+            margin-left: 280px;
+        }
+
+        /* Logo Styles */
+        .logo {
+            height: 60px;
+            width: 75px;
+        }
+
+        .logo-small {
+            height: 30px;
+            width: auto;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 768px) {
+            .sidebar.active + .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar {
+                width: 100%;
+                left: -100%;
+            }
+
+            .logo-text {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">
+                <img src="~/images/logo.png" alt="Company Logo" class="logo">
+                <span class="logo-text">Leave Management</span>
+            </a>
+        </div>
+        <nav class="nav flex-column">
+            @if (User.Identity.IsAuthenticated)
+            {
+                <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
+                    Dashboard
+                </a>
+                <a class="nav-link" asp-controller="Leave" asp-action="Index">
+                    My Leave
+                </a>
+                <a class="nav-link" asp-controller="Leave" asp-action="Apply">
+                    Apply for Leave
+                </a>
+
+                @if (User.IsInRole("Supervisor") || User.IsInRole("HOD"))
+                {
+                    <a class="nav-link" asp-controller="Approval" asp-action="Index">
+                        Approvals
+                    </a>
+                }
+
+                <a class="nav-link" asp-controller="Leave" asp-action="History">
+                    History
+                </a>
+                <a class="nav-link" asp-controller="Profile" asp-action="Manage">
+                    My Profile
+                </a>
+
+                <!-- User Info Section -->
+                <div class="sidebar-header mt-4">
+                    <small class="text-muted">Logged in as</small>
+                    <div class="text-white">@User.Identity.Name</div>
+                </div>
+
+                <!-- Logout in Sidebar - REMOVED -->
+            }
+            else
+            {
+                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
+            }
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3">
+                <div class="container-fluid">
+                    <button class="menu-toggle" type="button" id="menuToggle">
+                        <span>☰</span>
+                    </button>
+                    <div class="brand-container">
+                        <!-- Logo in Header -->
+                        <img src="~/images/logo.png" alt="Company Logo" class="logo-small">
+                        <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">
+                            <span class="logo-text">Leave Management</span>
+                        </a>
+                    </div>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1 d-none d-md-flex">
+                            <!-- Desktop navigation items -->
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Leave" asp-action="Index">My Leave</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Leave" asp-action="Apply">Apply for Leave</a>
+                            </li>
+                            @if (User.IsInRole("Supervisor") || User.IsInRole("HOD"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Approval" asp-action="Index">Approvals</a>
+                                </li>
+                            }
+                        </ul>
+                        <ul class="navbar-nav d-none d-md-flex">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                        @User.Identity.Name
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" asp-controller="Profile" asp-action="Manage">My Profile</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Leave" asp-action="History">Leave History</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                                <button type="submit" class="dropdown-item text-danger">Logout</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <div class="container">
+            <main role="main" class="pb-3">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @RenderBody()
+            </main>
+        </div>
+
+        <footer class="border-top footer text-muted">
+            <div class="container">
+                &copy; 2025 - Leave Management System
+            </div>
+        </footer>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+            }
+
+            menuToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+
+            // Close sidebar when clicking on a link (mobile)
+            if (window.innerWidth <= 768) {
+                const sidebarLinks = sidebar.querySelectorAll('.nav-link');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', toggleSidebar);
+                });
+            }
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && sidebar.classList.contains('active')) {
+                    toggleSidebar();
+                }
+            });
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

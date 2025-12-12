@@ -1,0 +1,156 @@
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+}
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+    .timeline-item.completed .timeline-marker {
+        background-color: #198754;
+        border-color: #198754;
+    }
+
+    .timeline-item.rejected .timeline-marker {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+.timeline-marker {
+    position: absolute;
+    left: -23px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #6c757d;
+    background-color: #fff;
+}
+
+.timeline-content {
+    padding-left: 15px;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.timeline-description {
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.timeline-comments {
+    font-size: 12px;
+    font-style: italic;
+    color: #495057;
+}
+
+/* Card enhancements */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Button enhancements */
+.btn-gap {
+    gap: 0.5rem;
+}
+
+/* Alert customizations */
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: #198754;
+    background-color: #d1e7dd;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+/* Progress bar customizations */
+.progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Table enhancements */
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+/* Badge enhancements */
+.badge {
+    font-weight: 500;
+}
+
+/* Login page styles */
+body.bg-light {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}

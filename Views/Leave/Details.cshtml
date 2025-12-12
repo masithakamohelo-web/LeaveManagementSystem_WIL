@@ -1,0 +1,220 @@
+﻿﻿
+@model Leave2Day.Models.LeaveApplication
+@{
+    ViewData["Title"] = "Leave Request Details";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Leave Request Details</h4>
+                <span class="badge bg-@(GetStatusBadgeClass(Model.status)) fs-6">@GetStatusText(Model.status)</span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Employee:</strong>
+                        <p>@Model.User?.FullName</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Department:</strong>
+                        <p>@Model.User?.department</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Leave Type:</strong>
+                        <p>@Model.type</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Duration:</strong>
+                        <p>@Model.numberOfDays day(s)</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Start Date:</strong>
+                        <p>@Model.startDate.ToString("dd MMMM yyyy")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>End Date:</strong>
+                        <p>@Model.endDate.ToString("dd MMMM yyyy")</p>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Reason:</strong>
+                    <p>@Model.reason</p>
+                </div>
+
+                <!-- Proof Document Section -->
+                @if (!string.IsNullOrEmpty(Model.ProofDocumentLink))
+                {
+                    <div class="mb-3">
+                        <strong>Proof Document:</strong>
+                        <div class="mt-2">
+                            <a href="@Model.ProofDocumentLink" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-external-link-alt"></i> View Proof Document
+                            </a>
+                            <small class="text-muted d-block mt-1">This will open the document in a new tab</small>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <strong>Proof Document:</strong>
+                        <p class="text-muted">No proof document submitted</p>
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <strong>Applied On:</strong>
+                    <p>@Model.appliedDate.ToString("dd MMMM yyyy HH:mm")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Approval Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item @(Model.status >= Leave2Day.Models.LeaveStatus.pending ? "completed" : "")">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Application Submitted</h6>
+                            <p class="timeline-description">@Model.appliedDate.ToString("dd MMM yyyy HH:mm")</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item @(Model.status >= Leave2Day.Models.LeaveStatus.approvedBySupervisor ? "completed" : (Model.status == Leave2Day.Models.LeaveStatus.rejectedBySupervisor ? "rejected" : ""))">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Supervisor Review</h6>
+                            @if (Model.supervisorActionDate.HasValue)
+                            {
+                                <p class="timeline-description">@Model.supervisorActionDate.Value.ToString("dd MMM yyyy HH:mm")</p>
+                            }
+                            else if (Model.status == Leave2Day.Models.LeaveStatus.rejectedBySupervisor)
+                            {
+                                <p class="timeline-description text-danger">Rejected</p>
+                            }
+                            else
+                            {
+                                <p class="timeline-description text-muted">Pending</p>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.supervisorFeedback))
+                            {
+                                <p class="timeline-comments"><strong>Comments:</strong> @Model.supervisorFeedback</p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="timeline-item @(Model.status >= Leave2Day.Models.LeaveStatus.approvedByHod ? "completed" : (Model.status == Leave2Day.Models.LeaveStatus.rejectedBySupervisor ? "rejected" : ""))">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">HOD Review</h6>
+                            @if (Model.hodActionDate.HasValue)
+                            {
+                                <p class="timeline-description">@Model.hodActionDate.Value.ToString("dd MMM yyyy HH:mm")</p>
+                            }
+                            else if (Model.status == Leave2Day.Models.LeaveStatus.rejectedBySupervisor)
+                            {
+                                <p class="timeline-description text-danger">Rejected</p>
+                            }
+                            else
+                            {
+                                <p class="timeline-description text-muted">Pending</p>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.hodFeedback))
+                            {
+                                <p class="timeline-comments"><strong>Comments:</strong> @Model.hodFeedback</p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="timeline-item @(Model.status == Leave2Day.Models.LeaveStatus.recorded ? "completed" : (Model.status == Leave2Day.Models.LeaveStatus.rejectedBySupervisor ? "rejected" : ""))">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">HR Processing</h6>
+                            @if (Model.HrProcessedAt.HasValue)
+                            {
+                                <p class="timeline-description">@Model.HrProcessedAt.Value.ToString("dd MMM yyyy HH:mm")</p>
+                            }
+                            else if (Model.status == Leave2Day.Models.LeaveStatus.rejectedBySupervisor)
+                            {
+                                <p class="timeline-description text-danger">Rejected</p>
+                            }
+                            else
+                            {
+                                <p class="timeline-description text-muted">Pending</p>
+                            }
+                            @*   @if (!string.IsNullOrEmpty(Model.HrComments))
+                            {
+                                <p class="timeline-comments"><strong>Comments:</strong> @Model.HrComments</p>
+                            } *@
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       
+    </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+
+    <!-- Cancel button for pending requests -->
+    @if (Model.status == Leave2Day.Models.LeaveStatus.pending)
+    {
+        <form asp-controller="Leave" asp-action="Cancel" method="post"
+              onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.id" />
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-times"></i> Cancel Request
+            </button>
+        </form>
+    }
+</div>
+
+@functions {
+    string GetStatusBadgeClass(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.pending => "warning",
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "info",
+            Leave2Day.Models.LeaveStatus.approvedByHod => "primary",
+            Leave2Day.Models.LeaveStatus.recorded => "success",
+            Leave2Day.Models.LeaveStatus.cancelled => "success",
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatusText(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.pending => "Pending Supervisor",
+            Leave2Day.Models.LeaveStatus.cancelled => "Pending Supervisor",
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "Pending HOD",
+            Leave2Day.Models.LeaveStatus.approvedByHod => "Pending HR",
+            Leave2Day.Models.LeaveStatus.recorded => "Approved",
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "Rejected",
+            _ => status.ToString()
+        };
+    }
+}

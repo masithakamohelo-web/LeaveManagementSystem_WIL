@@ -1,0 +1,116 @@
+﻿@model List<Leave2Day.Models.LeaveApplication>
+
+@{
+    ViewData["Title"] = "My Leave Requests";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-action="Apply" class="btn btn-primary">Apply for Leave</a>
+</div>
+
+@if (Model.Any())
+{
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Leave Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                            <th>Applied On</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model)
+                        {
+                            <tr>
+                                <td><span class="fw-semibold">@request.type</span></td>
+                                <td>@request.startDate.ToString("dd MMM yyyy")</td>
+                                <td>@request.endDate.ToString("dd MMM yyyy")</td>
+                                <td><span class="badge bg-light text-dark">@request.numberOfDays days</span></td>
+                                <td>
+                                    <span class="@GetStatusBadgeClass(request.status)">
+                                        @GetStatusText(request.status)
+                                    </span>
+                                </td>
+                                <td>@request.appliedDate.ToString("dd MMM yyyy HH:mm")</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a asp-action="Details" asp-route-id="@request.id"
+                                           class="btn btn-sm btn-outline-primary">View Details</a>
+
+                                        <!-- Cancel button for pending requests -->
+                                        @if (request.status == Leave2Day.Models.LeaveStatus.pending)
+                                        {
+                                            <form asp-controller="Leave" asp-action="Cancel" method="post"
+                                                  onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@request.id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">No Leave Requests Found</h5>
+                <p class="card-text">You haven't submitted any leave requests yet.</p>
+                <a asp-action="Apply" class="btn btn-primary">Apply for Your First Leave</a>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ✅ Back to Dashboard Button -->
+<div class="d-flex justify-content-end mt-4">
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-secondary">
+        ← Back to Dashboard
+    </a>
+</div>
+
+@functions {
+    string GetStatusBadgeClass(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.pending => "badge bg-warning text-dark",
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "badge bg-info text-dark",
+            Leave2Day.Models.LeaveStatus.approvedByHod => "badge bg-primary text-white",
+            Leave2Day.Models.LeaveStatus.recorded => "badge bg-success text-white",
+            Leave2Day.Models.LeaveStatus.cancelled => "badge bg-success text-white",
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "badge bg-danger text-white",
+            _ => "badge bg-secondary text-white"
+        };
+    }
+
+    string GetStatusText(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.cancelled => "Pending Supervisor",
+            Leave2Day.Models.LeaveStatus.pending => "Pending Supervisor",
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "Pending HOD",
+            Leave2Day.Models.LeaveStatus.approvedByHod => "Pending HR",
+            Leave2Day.Models.LeaveStatus.recorded => "Approved",
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "Rejected",
+            _ => status.ToString()
+        };
+    }
+}

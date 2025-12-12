@@ -1,0 +1,209 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@{
+    ViewData["Title"] = "HR Dashboard - Leave Management";
+    var approvedRequests = ViewBag.ApprovedRequests as List<Leave2Day.Models.LeaveApplication> ?? new List<Leave2Day.Models.LeaveApplication>();
+    var completedRequests = ViewBag.CompletedRequests as List<Leave2Day.Models.LeaveApplication> ?? new List<Leave2Day.Models.LeaveApplication>();
+    var allRequests = ViewBag.AllRequests as List<Leave2Day.Models.LeaveApplication> ?? new List<Leave2Day.Models.LeaveApplication>();
+}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1><i class="bi bi-briefcase"></i> HR Dashboard</h1>
+        <p class="text-muted">Capture approved leaves and manage leave records</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">Pending Capture</h5>
+                <h2>@approvedRequests.Count</h2>
+                <small>HOD approved, awaiting capture</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Captured</h5>
+                <h2>@completedRequests.Count</h2>
+                <small>Successfully recorded</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Requests</h5>
+                <h2>@allRequests.Count</h2>
+                <small>All time</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Days</h5>
+                <h2>@allRequests.Where(r => r.status == Leave2Day.Models.LeaveStatus.recorded).Sum(r => r.numberOfDays)</h2>
+                <small>Days captured</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex gap-3">
+                    <a asp-action="Reports" class="btn btn-primary">
+                        <i class="bi bi-bar-chart"></i> View Reports
+                    </a>
+                    <a asp-action="Employees" class="btn btn-info text-white">
+                        <i class="bi bi-people"></i> View All Employees
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approved Leaves - Pending Capture -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm border-warning">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0 text-warning">
+                    <i class="bi bi-clipboard-check"></i> Approved Leaves - Pending Capture
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (approvedRequests.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Department</th>
+                                    <th>Leave Type</th>
+                                    <th>Duration</th>
+                                    <th>Days</th>
+                                    <th>Approved By HOD</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var request in approvedRequests)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@request.User?.FullName</div>
+                                            <small class="text-muted">@request.User?.email</small>
+                                        </td>
+                                        <td>@request.User?.department</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">@request.type</span>
+                                        </td>
+                                        <td>@request.startDate.ToString("dd MMM") - @request.endDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-primary">@request.numberOfDays day(s)</span>
+                                        </td>
+                                        <td>@request.hodActionDate?.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <form asp-action="CaptureLeave" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@request.id" />
+                                                <button type="submit" class="btn btn-sm btn-success" 
+                                                        onclick="return confirm('Capture this leave record? This marks it as recorded in the system.')">
+                                                    <i class="bi bi-check-circle"></i> Capture
+                                                </button>
+                                            </form>
+                                            <a asp-controller="Leave" asp-action="Details" asp-route-id="@request.id" 
+                                               class="btn btn-sm btn-outline-info">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-3">No approved leaves pending capture. All caught up!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recently Captured -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-all"></i> Recently Captured Leaves
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (completedRequests.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Department</th>
+                                    <th>Leave Type</th>
+                                    <th>Duration</th>
+                                    <th>Days</th>
+                                    <th>Captured On</th>
+                                    <th>Captured By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var request in completedRequests.Take(10))
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@request.User?.FullName</div>
+                                            <small class="text-muted">@request.User?.email</small>
+                                        </td>
+                                        <td>@request.User?.department</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">@request.type</span>
+                                        </td>
+                                        <td>@request.startDate.ToString("dd MMM") - @request.endDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-success">@request.numberOfDays day(s)</span>
+                                        </td>
+                                        <td>@request.CapturedAt?.ToString("dd MMM yyyy HH:mm")</td>
+                                        <td>
+                                            <small class="text-muted">HR User</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-center text-muted">No captured leaves yet.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,128 @@
+﻿@model List<Leave2Day.Models.LeaveApplication>
+@{
+    ViewData["Title"] = "Pending Approvals";
+    var userRole = ViewBag.UserRole as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p class="text-muted">@userRole Level Approvals</p>
+    </div>
+    <span class="badge bg-primary fs-6">@Model.Count pending</span>
+</div>
+
+@if (Model.Any())
+{
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Leave Type</th>
+                            <th>Duration</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Proof Document</th> <!-- Fixed column header -->
+                            <th>Applied On</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@request.User?.FullName</div>
+                                    <small class="text-muted">@request.User?.email</small>
+                                </td>
+                                <td>@request.User?.department</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">@request.type</span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">@request.numberOfDays day@(request.numberOfDays != 1 ? "s" : "")</span>
+                                </td>
+                                <td>@request.startDate.ToString("dd MMM yyyy")</td>
+                                <td>@request.endDate.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(request.ProofDocumentLink))
+                                    {
+                                        <a href="@request.ProofDocumentLink"
+                                           target="_blank"
+                                           class="btn btn-sm btn-link">
+                                            View Proof
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No file</span>
+                                    }
+                                </td>
+                                <td>@request.appliedDate.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <span class="badge bg-@(GetStatusBadgeClass(request.status))">
+                                        @GetStatusText(request.status)
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="Review" asp-route-id="@request.id"
+                                       class="btn btn-sm btn-primary">Review</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-4">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                </div>
+                <h5 class="card-title">No Pending Approvals</h5>
+                <p class="card-text">You're all caught up! There are no leave requests waiting for your approval.</p>
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    // Returns Bootstrap badge color class based on leave status
+    string GetStatusBadgeClass(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.pending => "warning", // Yellow for pending
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "info", // Blue for supervisor approved
+            Leave2Day.Models.LeaveStatus.approvedByHod => "primary", // Dark blue for HOD approved
+            Leave2Day.Models.LeaveStatus.recorded => "success", // Green for processed
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "danger", // Red for rejected
+            _ => "secondary" // Gray for other statuses
+        };
+    }
+
+    // Returns user-friendly status text for display
+    string GetStatusText(Leave2Day.Models.LeaveStatus status)
+    {
+        return status switch
+        {
+            Leave2Day.Models.LeaveStatus.pending => "Awaiting Supervisor",
+            Leave2Day.Models.LeaveStatus.approvedBySupervisor => "Awaiting HOD",
+            Leave2Day.Models.LeaveStatus.approvedByHod => "Awaiting HR",
+            Leave2Day.Models.LeaveStatus.recorded => "Processed",
+            Leave2Day.Models.LeaveStatus.rejectedBySupervisor => "Rejected",
+            _ => status.ToString() // Fallback to enum name
+        };
+    }
+}
